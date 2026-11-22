@@ -10,191 +10,169 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Android%20%7C%20Windows%20%7C%20HarmonyOS-087E8B" alt="支持 Android、Windows 和鸿蒙">
+  <img src="https://img.shields.io/badge/HarmonyOS-%E9%B8%BF%E8%92%99%E5%8E%9F%E7%94%9F-087E8B" alt="HarmonyOS 鸿蒙原生">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue" alt="GPL-3.0 开源协议"></a>
-  <img src="https://img.shields.io/badge/HarmonyOS-M2%20%E5%B7%B2%E5%AE%8C%E6%88%90-E89B35" alt="鸿蒙端 M2 已完成">
+  <img src="https://img.shields.io/badge/%E8%BF%9B%E5%BA%A6-M2%20%E5%B7%B2%E5%AE%8C%E6%88%90-E89B35" alt="M2 已完成">
 </p>
 
 <p align="center">
-  <a href="#主要功能">主要功能</a> ·
-  <a href="#平台支持">平台支持</a> ·
-  <a href="#构建与开发">构建与开发</a> ·
+  <a href="#功能">功能</a> ·
+  <a href="#截图">截图</a> ·
+  <a href="#构建与安装">构建与安装</a> ·
+  <a href="#架构">架构</a> ·
+  <a href="#已知限制">已知限制</a> ·
   <a href="#常见问题">常见问题</a> ·
-  <a href="OHOS.md">鸿蒙说明</a> ·
-  <a href="DEVELOPMENT.md">开发文档</a>
+  <a href="OHOS.md">鸿蒙构建文档</a>
 </p>
 
 ---
 
-## 关于本项目
+## 关于博观
 
-**博观** 是开源项目 [ch6vip/novel-sound](https://github.com/ch6vip/novel-sound) 的派生版本（遵循 GPL-3.0）。
+博观是一个 **HarmonyOS（鸿蒙）原生** 的阅读与影音客户端：读小说、听有声书、刷短剧与漫剧，进度与书架都在设备本地。
 
-在保留原版全部功能的基础上，本仓库：
+- 界面由 Flutter 构建；网络、签名、解密、本地缓存与内置 HTTP 服务由随包分发的 Rust 核心完成；
+- 视频播放、后台播放、媒体通知与系统朗读，通过 ArkTS 插件调用鸿蒙系统能力（AVPlayer / AVSession / Core Speech Kit）；
+- 只发布鸿蒙版本，不提供安卓或桌面安装包。
 
-- 将应用更名为 **博观**，重新整理了文档与构建说明；
-- 新增 **HarmonyOS（鸿蒙）原生端**：ArkTS 插件 + Rust 核心交叉编译 + hvigor 工程，当前 **M2 已完成**（视频/短剧、听书、系统朗读、后台播放与媒体通知）；
-- 修复移植过程中暴露的播放器与系统服务问题（前台会话串行化、纹理 surfaceId 桥接等）。
+本项目沿用开源项目 [ch6vip/novel-sound](https://github.com/ch6vip/novel-sound) 的界面与业务逻辑（GPL-3.0），**鸿蒙端移植与实现由本项目维护**，并在移植过程中重写了播放器与朗读链路。
 
-原版项目、作者与社区信息见文末「致谢与许可」。本仓库不冒充原版，也不代表原作者的观点或承诺。
+## 功能
+
+| 功能 | 状态 |
+| --- | --- |
+| 首页 / 榜单 / 分类 / 书架 | ✅ 可用 |
+| 阅读器（正文、章节缓存、阅读进度） | ✅ 可用 |
+| 短剧 / 漫剧播放（含加密源解密） | ✅ 可用，AVPlayer + Flutter 外部纹理 |
+| 听书（作品朗读音频） | ✅ 可用，后台播放不中断 |
+| 系统朗读（离线 TTS，逐句高亮） | ✅ 可用，Core Speech Kit |
+| 后台播放 / 媒体通知 | ✅ 可用，长时任务 + AVSession |
+| 本机密钥库（设备池密钥、Hive 密钥） | ✅ 可用，Asset Store Kit |
+| 画中画（PiP） | ⏳ 开发中，需要 XComponent 双输出 |
+| 悬浮窗小窗 | ⛔ 鸿蒙不开放全局悬浮窗，插件已软降级 |
+| 本地加密缓存回放 | ⏳ 尚未在真机验证 |
+
+## 截图
 
 <p align="center">
-  <img src=".github/screenshots/m2/drama-player.jpeg" width="240" alt="鸿蒙真机短剧播放">
-  <img src=".github/screenshots/m2/reader-tts.jpeg" width="240" alt="鸿蒙真机系统朗读">
-  <img src=".github/screenshots/m2/tts-settings.jpeg" width="240" alt="鸿蒙系统朗读设置">
+  <img src=".github/screenshots/m2/drama-player.jpeg" width="230" alt="短剧播放">
+  <img src=".github/screenshots/m2/reader-tts.jpeg" width="230" alt="系统朗读">
+  <img src=".github/screenshots/m2/tts-settings.jpeg" width="230" alt="朗读设置">
 </p>
-<p align="center"><sub>鸿蒙端真机截图：短剧播放 · 系统朗读高亮 · 朗读引擎选择（M2）</sub></p>
+<p align="center"><sub>鸿蒙真机：短剧播放 · 系统朗读逐句高亮 · 朗读引擎与语速</sub></p>
 
-## 主要功能
+## 构建与安装
 
-### 📖 看小说，听故事
+前置环境（版本与踩坑详见 [OHOS.md](OHOS.md)）：
 
-- 在线阅读小说，也能导入 TXT / EPUB 电子书。
-- 字体、字号、翻页方式随心调，支持深色、纯黑和墨水屏模式。
-- 支持系统朗读和真人有声书，可调倍速、定时停止、后台播放。
+- Flutter 3.50.0 + OHOS 适配版、HarmonyOS SDK、DevEco Studio（hvigor 6.x）
+- Rust 1.100+，目标 `aarch64-unknown-linux-ohos`
+- 安装 `path_provider_ohos` 等鸿蒙适配插件后，需运行一次 `dart run tool/patch_ohos_packages.dart`
 
-### 🎬 追短剧，看漫画
+```powershell
+flutter pub get
+dart run tool/patch_ohos_packages.dart
+powershell -File .\scripts\build_rust_backend_ohos.ps1 -SkipCodegen
+flutter build hap --debug
 
-- 短剧、漫剧、漫画集中浏览，按作品名称或编号搜索。
-- 自动保存阅读和播放进度，下次打开接着看。
+$hdc = 'D:\ohsdk\default\openharmony\toolchains\hdc.exe'
+& $hdc install .\build\ohos\hap\entry-default-signed.hap
+& $hdc shell aa start -a EntryAbility -b com.shijinpu.fqapp
+```
 
-### 📚 整理书架，离线慢慢看
+注意事项：
 
-- 收藏喜欢的作品，分组整理，导出备份后可在新设备恢复。
-- 提前下载内容，没网时继续阅读或播放。
+- 首次构建时 hvigor 会走 **Auto-signing**，生成调试证书并回写 `ohos/build-profile.json5` —— 该文件是本机签名材料，**不要提交**；
+- 只打包 `ohos/entry/libs/arm64-v8a/` 里的 `.so`；改了 Rust 代码必须重跑上面的 Rust 构建脚本，否则设备上仍是旧库；
+- **换了签名证书要先清数据再装**：`hdc shell bm uninstall -n com.shijinpu.fqapp`，否则启动页会报 `encrypted pool file authentication failed`；
+- 日志域 `0xF0A0`：`hdc shell "hilog -x | grep -E 'A0F0A0'"`。
 
-## 平台支持
+## 架构
 
-| 平台 | 状态 | 说明 |
-| --- | --- | --- |
-| 安卓 | ✅ 沿用原版 | Android 7.0 及以上，构建见 [DEVELOPMENT.md](DEVELOPMENT.md) |
-| Windows | ✅ 沿用原版 | Windows 10 / 11 64 位，见 [WINDOWS.md](WINDOWS.md) |
-| **鸿蒙** | ✅ **M2 已完成** | HarmonyOS 真机可安装运行，见 [OHOS.md](OHOS.md) |
-| Linux | ⏳ 社区移植 | 见 [LINUX.md](LINUX.md) |
-| iOS | ⏳ 未完成 | 见 [IOS.md](IOS.md) |
+```
+Flutter (Dart)
+ ├─ Rust 核心 libfqapi_core.so      网络 / 签名 / 解密 / CENC 索引 / 127.0.0.1 环回服务
+ ├─ ArkTS 插件（FlutterPlugin）      fqapp/secure_keys、fqapp/native_player、fqapp/system_tts
+ └─ NAPI 模块 libfq_native.so        Flutter 纹理 → AVPlayer surfaceId、Rust 媒体源桥接
+```
 
-### 鸿蒙端进度（M2）
+- **解密播放**：Rust 用内置密钥解开 CENC 视频，通过 `127.0.0.1` 环回 HTTP 以 Range 分块提供；`AVPlayer` 只播明文本地源，播放器里没有任何解密逻辑。
+- **视频输出**：`TextureRegistry.registerTexture()` → `SurfaceTextureEntry.getSurfaceId()` → `AVPlayer.surfaceId`，画面直接进 Flutter 外部纹理。
+- **后台与通知**：`UIAbilityContext` + `startBackgroundRunning(AUDIO_PLAYBACK)` + `createAVSession`，通知栏可控制播放。
+- **系统朗读**：`@kit.CoreSpeechKit` 的离线 `textToSpeech`（聆小珊等音色），插件逐句 speak 并回传 `start` / `done` / `error` 事件，由界面驱动高亮推进。
+- **密钥**：Asset Store Kit（等价 iOS Keychain），应用不接触密钥材料。
 
-- ✅ 视频 / 短剧播放：AVPlayer + Flutter 外部纹理（`SurfaceTexture.getSurfaceId()` 直接作为 `surfaceId`）
-- ✅ 加密媒体：Rust 核心的 CENC 解密与 loopback 服务在设备内运行，`AVPlayer` 播放 `127.0.0.1` 本地源
-- ✅ 听书：服务端音频（智能朗读）与离线**系统朗读**（Core Speech Kit，person 聆小珊）
-- ✅ 后台播放与媒体通知：长时任务（`KEEP_BACKGROUND_RUNNING` + `audioPlayback`）+ AVSession
-- ⚠️ 悬浮窗：鸿蒙不开放全局悬浮窗，插件按软降级返回「不支持」，入口不出现
-- ⏳ 画中画（PiP）：需要 `XComponent` 双输出，PoC 已验证可行，尚未实现
-- ⏳ 本地加密缓存（`file://` + 密钥）回放：尚未验证
-- ℹ️ 已知限制：系统朗读的语速/音量由系统决定（无逐应用控制），鸿蒙未提供朗读引擎设置页
+## 已知限制
 
-## 构建与开发
-
-本仓库目前不附带预编译安装包，请按文档自行构建：
-
-| 目标 | 文档 |
-| --- | --- |
-| Windows / Linux 桌面 | [WINDOWS.md](WINDOWS.md) · [LINUX.md](LINUX.md) |
-| 安卓 | [DEVELOPMENT.md](DEVELOPMENT.md) |
-| iOS | [IOS.md](IOS.md) |
-| **鸿蒙** | [OHOS.md](OHOS.md)（工具链、一次性准备、构建、安装、签名注意事项） |
-
-鸿蒙端构建要素（摘要）：
-
-- Flutter 3.50.0 + OHOS 适配版、DevEco Studio（hvigor）、`D:\ohsdk`（路径不要带空格）
-- Rust 交叉编译到 `aarch64-unknown-linux-ohos`，产物 `.so` 放入 `ohos/entry/libs/arm64-v8a/`
-- `flutter build hap --debug` → `build/ohos/hap/entry-default-signed.hap`，用 `hdc install` 安装
-
-更完整的环境变量、第三方包补丁、日志与截图方法见 [OHOS.md](OHOS.md)。
-
-## 开始使用
-
-1. **找作品**：在首页浏览，或搜索作品名称、编号。
-2. **导入自己的书**：在书架菜单选择「导入图书」，打开 TXT / EPUB 文件。
-3. **下载小说**：在作品详情点「下载」，在「我的 → 离线缓存」管理已下载内容。
-
-看小说时点击屏幕中间，可以调整阅读设置。主题和听书选项在「我的 → 设置」；经典主题点击右上角齿轮。
+- **画中画** 未实现：需要 `XComponent` 双输出（Flutter 纹理 + PiP surface），PoC 已验证可行。
+- **悬浮窗** 不提供：鸿蒙手机不开放全局悬浮窗权限，插件返回「不支持」，入口不出现。
+- **本地加密缓存回放** 未在真机验证；未下载的在线内容不受影响。
+- **系统朗读** 的语速、音量由离线引擎管理，应用侧只记录；鸿蒙没有朗读引擎设置页可跳转。
+- 桌面平台代码尚未从 Dart 层条件隔离（Dart 没有按操作系统区分的条件导入键），但鸿蒙构建不注册桌面包，功能上无影响。
 
 ## 常见问题
 
 <details>
-<summary><b>没网也能用吗？</b></summary>
+<summary><b>安装后启动报「启动失败 / encrypted pool file authentication failed」？</b></summary>
 
-可以看已导入的电子书、读已缓存的章节、播放已下载的媒体。只有已下载完成的内容才能离线使用，搜索和获取新内容仍需要联网。启动时可选择「离线阅读」。
-
-</details>
-
-<details>
-<summary><b>一直加载、搜索失败或播放不了，怎么办？</b></summary>
-
-先检查网络，换个网络或重启应用再试。在线内容依赖第三方服务，对方调整或网络波动可能导致暂时不可用。
-
-持续失败请在 [Issues](https://github.com/hero708/boguan/issues) 反馈，附上应用版本、设备型号（例如「鸿蒙 / HarmonyOS 26」）、作品名称或编号，以及错误截图。
-
-</details>
-
-<details>
-<summary><b>使用代理或广告过滤时提示设备注册连接失败，重试无效？</b></summary>
-
-首次使用在线内容时，应用需要通过 HTTPS 连接 `log.snssdk.com:443` 完成上游设备注册。部分广告过滤规则会把该域名归为日志服务并拒绝连接；在规则未改变时，重复点击重试仍会失败。该提示也可能由 DNS、连接或上游服务异常引起，不能仅凭 TLS 错误断定被拦截。
-
-无需关闭代理、TUN/VPN 或全部广告过滤。先在代理／DNS 过滤工具中查看该域名的请求记录；如果明确命中拒绝规则，仅为 **`log.snssdk.com`** 添加允许例外，优先于拒绝规则，并继续使用你选择的出口。不要放行整个 `snssdk.com` 域名族。
-
-对于 Clash / Mihomo，将精确域名规则插入现有 `rules` 列表并置于广告拒绝规则之前，策略选用你已有的适用出口：
-
-```yaml
-prepend:
-  - DOMAIN,log.snssdk.com,DIRECT
-```
-
-若该域名需要经代理连接，把 `DIRECT` 换成你已有的代理策略组名称。DNS 层过滤也需要添加精确域名例外。应用按配置使用网络出口，不会自动改写过滤规则、绕过显式代理或忽略证书校验；若允许后仍失败，请反馈应用版本、失败时间及脱敏后的域名／命中规则（不要公开代理订阅、凭据或设备标识）。
-
-</details>
-
-<details>
-<summary><b>换设备怎么搬书架和进度？</b></summary>
-
-在「我的 → 备份与导入」导出备份文件，传到新设备后选择「从备份文件恢复」，预览并确认。
-
-也可以使用 WebDAV 云同步：在「我的 → 备份与导入 → WebDAV 同步」填写地址、用户名和密码，保存并立即同步；新设备执行同样操作即可。
-
-备份包含收藏、书架分组、阅读和播放进度、已看剧集；不包含本地电子书、下载缓存、阅读时长、划线和设置。导出前先退出阅读或暂停播放，让进度保存，本地书文件请单独保留。
-
-</details>
-
-<details>
-<summary><b>系统朗读没有声音？</b></summary>
-
-检查媒体音量，并确认设备安装了语音引擎和中文音色。安卓 / Windows 可在「设置 → 听书 → 系统朗读」选择可用语音；Windows 用户可在系统语音设置中安装中文音色。
-
-鸿蒙端使用系统内置的 Core Speech Kit 离线引擎（聆小珊等），初次朗读前请确认系统「设置 → 声音」中的语速与音量正常；鸿蒙没有提供第三方朗读引擎设置页，引擎内暂不支持逐应用调语速。
-
-</details>
-
-<details>
-<summary><b>鸿蒙端安装后提示「启动失败 / encrypted pool file authentication failed」？</b></summary>
-
-这是本地数据与签名证书不匹配导致的。鸿蒙把密钥存放在与签名身份绑定的安全存储里，**换了签名证书（例如从正式包切到调试自动签名）后，旧的池文件无法解密**。处理方式是清数据重装：
+本机密钥与签名身份绑定。换了签名证书（例如从正式包切到调试自动签名）后，旧数据无法解密。清数据重装即可：
 
 ```powershell
 hdc shell bm uninstall -n com.shijinpu.fqapp
 hdc install .\build\ohos\hap\entry-default-signed.hap
 ```
 
-注意：卸载会清除本地书、缓存与阅读进度，重要数据请先备份。详见 [OHOS.md](OHOS.md) 的安装章节。
+卸载会清除本地书、缓存与进度，重要数据请先备份（应用内「我的 → 备份与导入」）。
 
 </details>
 
-## 参与与贡献
+<details>
+<summary><b>视频能播放，但没有画面（黑屏）？</b></summary>
 
-- 使用中遇到问题、想要新功能：到本仓库 [Issues](https://github.com/hero708/boguan/issues) 反馈。
-- 想一起改代码：见 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [DEVELOPMENT.md](DEVELOPMENT.md)。
-- **原版功能相关问题**（与原版一致的阅读、下载、账号体系等）建议先到 [上游项目](https://github.com/ch6vip/novel-sound/issues) 检索，可能已有答案。
-- 鸿蒙相关的问题、构建失败与移植建议，欢迎直接提到本仓库，附 `hilog` 摘要（`hilog -x | grep A0F0A0`）与设备型号。
+确认是本地构建的 HAP 且 `ohos/entry/libs/arm64-v8a/libfqapi_core.so` 是最新的（改了 Rust 代码没重编会出现旧库）。实在异常时抓一份 `hilog -x | grep -E 'A0F0A0|fqapp_player'` 的日志反馈，能看到创建播放器、设置 surfaceId、首帧的完整链路。
 
-本派生版本没有官方交流群或赞助渠道；如果你想支持原版作者，请前往原仓库。
+</details>
 
-## 致谢与许可
+<details>
+<summary><b>系统朗读没有声音？</b></summary>
 
-- 原版项目：[ch6vip/novel-sound](https://github.com/ch6vip/novel-sound)（作者 ch6vip 及贡献者），本仓库在其基础上派生并重命名。
-- 界面参考：[Wenku8 界面项目](assets/licenses/wenku8/PORTING.md)；社区：[LINUX DO](https://linux.do/)。
-- 项目采用 [GPL-3.0](LICENSE) 开源协议，Copyright © 2026 ch6vip；本仓库的鸿蒙端与相关修改由 hero708 维护，同样以 GPL-3.0 发布。
+先确认媒体音量；鸿蒙端使用系统内置的 Core Speech Kit 离线引擎，鸿蒙没有第三方朗读引擎设置页，语速在应用内「设置 → 听书 → 系统朗读」，音色固定为系统提供的「聆小珊」等。若提示引擎初始化失败，多半是设备引擎实例被占用，重开应用即可。
+
+</details>
+
+<details>
+<summary><b>切到后台后播放/朗读会停吗？</b></summary>
+
+不会。视频与听书走长时任务（`KEEP_BACKGROUND_RUNNING` + `audioPlayback`），系统朗读引擎以 `isBackStage` 方式创建，切后台、锁屏仍会继续；通知栏会显示媒体控制卡片。
+
+</details>
+
+<details>
+<summary><b>为什么只有鸿蒙版本？</b></summary>
+
+本项目只面向 HarmonyOS 做移植与维护，不提供安卓或桌面安装包。其他平台的实现与发行请参考上游开源项目。
+
+</details>
+
+<details>
+<summary><b>一直加载、搜索失败或播放不了？</b></summary>
+
+先检查网络；在线内容依赖第三方服务，对方调整或网络波动可能导致暂时不可用。若开着代理或广告过滤，首次使用在线内容需要放行精确域名 `log.snssdk.com:443`（上游设备注册），不要放行整个域名族。
+
+持续失败请到 [Issues](https://github.com/hero708/boguan/issues) 反馈，附应用版本、设备型号（如 HarmonyOS 26 / API 26）、作品名称与错误截图；崩溃或黑屏再附 hilog 摘要。
+
+</details>
+
+## 参与与反馈
+
+- 问题与建议：本仓库 [Issues](https://github.com/hero708/boguan/issues)；
+- 鸿蒙构建、签名、播放相关的改动请先看 [OHOS.md](OHOS.md)，其中有完整的环境搭建、真机安装与日志方法；
+- 提交反馈时请勿附上代理订阅、凭据、完整签名 URL 或设备标识。
+
+## 许可与致谢
+
+- 项目采用 [GPL-3.0](LICENSE) 开源协议；界面与业务逻辑源自 [ch6vip/novel-sound](https://github.com/ch6vip/novel-sound)（作者 ch6vip 及贡献者），鸿蒙端移植与实现由本项目维护，同样以 GPL-3.0 发布。
+- 界面参考 [Wenku8 界面项目](assets/licenses/wenku8/PORTING.md)，感谢 [LINUX DO](https://linux.do/) 社区。
 
 在线内容来自第三方，版权归各自权利人。本项目与内容提供方无隶属关系，不托管作品，不绕过付费或访问权限。
 
