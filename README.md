@@ -38,12 +38,12 @@
 
 原版项目、作者与社区信息见文末「致谢与许可」。本仓库不冒充原版，也不代表原作者的观点或承诺。
 
-> <p align="center">
->   <img src=".github/screenshots/m2/drama-player.jpeg" width="240" alt="鸿蒙真机短剧播放">
->   <img src=".github/screenshots/m2/reader-tts.jpeg" width="240" alt="鸿蒙真机系统朗读">
->   <img src=".github/screenshots/m2/tts-settings.jpeg" width="240" alt="鸿蒙系统朗读设置">
-> </p>
-> <p align="center"><sub>鸿蒙端真机截图：短剧播放 · 系统朗读高亮 · 朗读引擎选择（M2）</sub></p>
+<p align="center">
+  <img src=".github/screenshots/m2/drama-player.jpeg" width="240" alt="鸿蒙真机短剧播放">
+  <img src=".github/screenshots/m2/reader-tts.jpeg" width="240" alt="鸿蒙真机系统朗读">
+  <img src=".github/screenshots/m2/tts-settings.jpeg" width="240" alt="鸿蒙系统朗读设置">
+</p>
+<p align="center"><sub>鸿蒙端真机截图：短剧播放 · 系统朗读高亮 · 朗读引擎选择（M2）</sub></p>
 
 ## 主要功能
 
