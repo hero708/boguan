@@ -8,6 +8,17 @@
       "abiFilters": [
         "arm64-v8a"
       ]
+    },
+    // Nothing we ship needs the shared C++ runtime: libflutter.so, libfq_native.so
+    // (linked with -static-libstdc++) and the Rust core only NEED libc/libz/system
+    // libs. The OHOS toolchain still copies libc++_shared.so (~1.2 MB) into the HAP,
+    // so drop it there instead of shipping a library that is never loaded.
+    "nativeLib": {
+      "filter": {
+        "excludes": [
+          "**/libc++_shared.so"
+        ]
+      }
     }
   },
   "targets": [
