@@ -43,29 +43,5 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(sp_audio_tempo PRIVATE -Wall -Wextra -Wpedantic -Wno-sign-compare)
 endif()
 
-if(ANDROID)
-    # 时伸缩的 JNI 桥：ExoPlayer 的 AudioProcessor 直接调用这里的采样级接口。
-    add_library(shortplay_tempo SHARED android/tempo_jni_bridge.c)
-    target_link_libraries(shortplay_tempo PRIVATE sp_audio_tempo)
-    target_compile_options(shortplay_tempo PRIVATE -Wall -Wextra -Wpedantic)
-    target_link_options(shortplay_tempo PRIVATE
-        "-Wl,-z,max-page-size=16384"
-        "-Wl,-z,common-page-size=16384"
-        "-Wl,-z,relro"
-        "-Wl,-z,now"
-    )
-
-    add_library(shortplay_crypto SHARED android/jni_bridge.c)
-    target_link_libraries(shortplay_crypto PRIVATE sp_crypto_core)
-    target_compile_options(shortplay_crypto PRIVATE -Wall -Wextra -Wpedantic)
-    set_target_properties(shortplay_crypto PROPERTIES C_VISIBILITY_PRESET hidden)
-    # Both ELF LOAD alignment and offset/address congruence must support 16 KiB
-    # pages. APK zip alignment alone cannot make a 4 KiB ELF compatible.
-    target_link_options(shortplay_crypto PRIVATE
-        "-Wl,-z,max-page-size=16384"
-        "-Wl,-z,common-page-size=16384"
-        "-Wl,-z,relro"
-        "-Wl,-z,now"
-        "-Wl,--no-undefined"
-    )
-endif()
+# Android 的 JNI 桥（android/jni_bridge.c、android/tempo_jni_bridge.c）随 Android
+# 工程一起移除；鸿蒙侧由 rust/ 的 flutter_rust_bridge 直接静态链接上面两个静态库。

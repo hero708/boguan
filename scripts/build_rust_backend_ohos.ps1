@@ -6,7 +6,7 @@ where hvigor packages it into the HAP.
 Only the aarch64 triple is supported: the OHOS Flutter engine and Hvigor
 currently reject 32-bit ARM (armeabi-v7a) application packages.
 
-This is the OHOS counterpart of build_rust_backend.ps1. It cross-compiles with
+It cross-compiles with
 the HarmonyOS SDK LLVM toolchain (no separate NDK download) and places the
 shared library where hvigor picks it up. The Rust target is
 aarch64-unknown-linux-ohos, a Tier-2-with-host-tools Rust target: its std is

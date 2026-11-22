@@ -51,8 +51,8 @@ class AboutPage extends StatelessWidget {
   /// is displayed at 80dp, so it only needs re-decoding above 4× DPI; clamping
   /// to the asset's real width keeps a high-DPI device from asking the decoder
   /// to upscale a surface the asset does not have. Keep it in sync with
-  /// LOGO_SIZE in scripts/generate_app_icons.py.
-  static const _logoPixelWidth = 384;
+  /// `LOGO_SIZE` in scripts/generate_ohos_icons.py.
+  static const _logoPixelWidth = 512;
 
   @override
   Widget build(BuildContext context) {
@@ -387,7 +387,7 @@ class _AboutLogo extends StatelessWidget {
             'assets/images/app_logo.webp',
             width: 80,
             height: 80,
-            // Decode at the display size rather than the whole 384²
+            // Decode at the display size rather than the whole 512²
             // surface, which would hold ~590 KB in the image cache for a
             // 80dp logo.
             cacheWidth: (80 * MediaQuery.devicePixelRatioOf(context))

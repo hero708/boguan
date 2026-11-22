@@ -1,20 +1,19 @@
 # 构建与维护脚本
 
-除单独注明工作目录外，下列命令从仓库根目录执行。脚本路径被 CI、Gradle 或测试引用；调整位置时同时更新调用方。
+除单独注明工作目录外，下列命令从仓库根目录执行。脚本路径被 CI、hvigor 或测试引用；调整位置时同时更新调用方。
 
 ## 常用入口
 
 | 脚本 | 用途 | 依赖与输出 |
 | --- | --- | --- |
 | [format_all.ps1](format_all.ps1) / [.sh](format_all.sh) | 格式化 Dart、手写 Rust 和 `scripts/` 中的 JavaScript；支持只检查与按改动范围执行 | Git、Node.js 22+、Dart、rustfmt、锁定的 Prettier；安装与范围见下文 |
-| [build_rust_backend.ps1](build_rust_backend.ps1) / [.sh](build_rust_backend.sh) | 生成 FRB 绑定并交叉编译 Rust 核心（arm64-v8a + armeabi-v7a） | Rust、NDK、FRB codegen 2.13.0；输出到 `android/app/src/main/jniLibs/<abi>/` |
+| [build_rust_backend_ohos.ps1](build_rust_backend_ohos.ps1) | 生成 FRB 绑定并交叉编译 Rust 核心（`aarch64-unknown-linux-ohos`） | Rust、OHOS SDK/NDK、FRB codegen；输出 `libfqapi_core.so` 供 HAP 打包 |
 | [run_rust_host_tests.ps1](run_rust_host_tests.ps1) / [.sh](run_rust_host_tests.sh) | 构建宿主核心，运行真实 Dart → FRB → Rust 集成测试 | Rust、Flutter；使用本地 Mock 上游和临时运行目录 |
-| [verify_android_apk.py](verify_android_apk.py) | 检查 APK 签名、库、版本、资源及 16 KiB 对齐 | Python 3、Android Build-Tools；报告目录由参数指定 |
+| [generate_ohos_icons.py](generate_ohos_icons.py) | 生成鸿蒙工程的全部图标资产（AppScope 图标、启动图、in-app logo、1024 母图） | Python 3、Pillow ≥ 9.1、numpy；修改已提交图片，普通构建直接使用现有图片 |
 | [check_native_alignment.cjs](check_native_alignment.cjs) | 检查一个或多个 ELF 库（ARM64/ARM）的 LOAD 段对齐 | Node.js；只读取指定 `.so` |
 | [check_line_budget.sh](check_line_budget.sh) | 仅供参考的源码行数报告，无固定上限，不判断通过/失败 | Bash、Python 3、Git；只读已跟踪源码，列出最大的 20 个文件；无预算更新操作，CI 不因此阻塞 |
 | [check_so_freshness.cjs](check_so_freshness.cjs) | 打版前检查 `libfqapi_core.so` 是否比 `rust/` 的最新改动新（判据 CRIT-011）；mtime 不是内容证明，`--expect-sha256` 可比对内容哈希 | Node.js、git；只读取文件时间与 git 历史；未接入 CI（CI 每次重编 Rust） |
 | [verify_audio_cenc.cjs](verify_audio_cenc.cjs) | 检查播放响应和加密 AAC 样本 | Node.js；会按响应中的地址有限下载 HTTPS 音频，属于在线诊断 |
-| [generate_app_icons.py](generate_app_icons.py) | 从品牌源图生成 Android 图标、Windows 图标及应用 Logo | Python 3、Pillow ≥ 9.1；修改已提交图片，普通构建直接使用现有图片 |
 | [make_test_media.py](make_test_media.py) | 用 ffmpeg 内置信号源合成播放夹具（MP4 + HLS + 密钥素材） | Python 3、ffmpeg/ffprobe；缺工具时 `--check` 退出码 2，输出到 `build/test-media/`；参数错误先于工具链检查报告，回归见 `test/make_test_media_test.cjs` |
 
 ## Rust 构建与宿主集成
@@ -23,19 +22,23 @@
 
 ```powershell
 flutter pub get --enforce-lockfile
-.\scripts\build_rust_backend.ps1
+.\scripts\build_rust_backend_ohos.ps1
 .\scripts\run_rust_host_tests.ps1
 ```
 
-Linux/macOS 对应：
+`build_rust_backend_ohos.ps1` 交叉编译 `aarch64-unknown-linux-ohos`，产物随 HAP 打包；
+鸿蒙侧没有 JNI 桥，C 核心由 `rust/build.rs` 用 `cc` 编进同一个 `libfqapi_core.so`。
+宿主测试的 `-SkipBuild` 只在宿主库已经更新时使用。
+
+Linux/macOS 的宿主机上只跑宿主测试（`build_rust_backend_ohos.ps1` 需要 Windows 与 OHOS SDK）：
 
 ```bash
 flutter pub get --enforce-lockfile
-bash scripts/build_rust_backend.sh
 bash scripts/run_rust_host_tests.sh
 ```
 
-Windows 构建开关为 `-SkipCodegen`、`-HostLib`、`-Profile debug`；Shell 版对应 `--skip-codegen`、`--host-lib`、`--profile debug`。宿主测试的 `-SkipBuild` / `--skip-build` 只在宿主库已经更新时使用。
+Windows 构建开关为 `-SkipCodegen`、`-HostLib`、`-Profile debug`；Shell 宿主测试对应
+`--skip-build`（宿主库已经更新时使用）。
 
 FRB 绑定发生变化时，还需再次生成并比较内容哈希，确认可复现。生成的文件位置见本地 `docs/project-structure.md`（不入库）。
 
@@ -106,12 +109,12 @@ cargo clippy --manifest-path rust/Cargo.toml --locked --all-targets -- -D warnin
 cargo test --manifest-path rust/Cargo.toml --locked
 flutter analyze --no-pub
 flutter test --no-pub --concurrency=2
-node --test test/web_assets_test.cjs test/verify_audio_cenc_test.cjs test/build_rust_backend_scripts_test.cjs
+node --test test/web_assets_test.cjs test/verify_audio_cenc_test.cjs
 ```
 
-`flutter test` 在宿主动态库存在时会运行 FRB 集成；库缺失时相关测试会明确跳过。`run_rust_host_tests.*` 可先重建宿主库再执行这组测试。C/JNI 主机回归和编译器要求见 [native/README.md](../native/README.md)。Android JVM 测试须在 `android/` 目录中执行：Windows 使用 `.\gradlew.bat :app:testDebugUnitTest`，Linux/macOS 使用 `./gradlew :app:testDebugUnitTest`。
+`flutter test` 在宿主动态库存在时会运行 FRB 集成；库缺失时相关测试会明确跳过。`run_rust_host_tests.*` 可先重建宿主库再执行这组测试。C 主机回归和编译器要求见 [native/README.md](../native/README.md)。
 
-## APK、诊断与资源
+## 打包、诊断与资源
 
 ### 合成媒体夹具
 
@@ -152,24 +155,22 @@ App。上游改的是签名算法或注册协议（逻辑）时同样要发版�
 dart scripts/convert_fanqie_capture.dart <解包目录> <新输出文件.json> [目录响应缓存目录]
 ```
 
-转换器与 Android 导入共用小说筛选、去重和章节 ID 匹配代码；输出包含书架和历史。
+转换器与导入功能共用小说筛选、去重和章节 ID 匹配代码；输出包含书架和历史。
 可选缓存目录中的 `<bookId>.json` 为现有 `/api/directory` 接口的完整响应。
 没有目录时保留章节 ID，不猜章节序号；不会下载正文或访问账号。输出含个人阅读数据，请勿入库。
 
-```powershell
-flutter build apk --release --target-platform android-arm,android-arm64 --split-per-abi --no-pub
-python scripts/verify_android_apk.py --help
-node scripts/check_native_alignment.cjs android/app/src/main/jniLibs/arm64-v8a/libfqapi_core.so android/app/src/main/jniLibs/armeabi-v7a/libfqapi_core.so
-node scripts/check_so_freshness.cjs android/app/src/main/jniLibs/arm64-v8a/libfqapi_core.so --since v1.0.88
+### 打包与图标
 
-`check_so_freshness.cjs` 未接入 CI：CI 每次都从源码重编 Rust 核心，不需要它。且它的 mtime 比较不是内容证明——`touch`、时钟偏差、用不同源码重编出相同 mtime 都能骗过它；git 历史比较也只看到已提交的 `rust/` 改动，未提交文件只靠 mtime。它只是本地快速辅查，可靠做法是重编，或用 `--expect-sha256 <构建时记录的哈希>` 比对库内容。
+```powershell
+.\scripts\build_rust_backend_ohos.ps1                       # 先重建 Rust 核心
+flutter build hap --debug                                   # 产物 build\ohos\hap\entry-default-signed.hap
+node scripts/check_native_alignment.cjs <hap 内或构建目录里的 libfqapi_core.so>
+python scripts/generate_ohos_icons.py --preview             # 改图标后重新生成资产 + build\app_icon_preview.png
 node scripts/verify_audio_cenc.cjs build/diagnostics/play-response.json
-python scripts/generate_app_icons.py
 ```
 
-APK 校验须传入 `--apk`、`--build-tools`、`--report-dir` 以及预期签名指纹，完整示例见本地
-`docs/release-signing.md`（不入库）。只在没有正式签名材料的场景（fork、本地检视构建）才加
-`--allow-unsigned`，此时报告里 `signature.signed` 为 `false`，其余检查照常执行。
-`--help` 只显示参数，不算通过 APK 验证。
+`check_so_freshness.cjs` 未接入 CI：CI 每次都从源码重编 Rust 核心，不需要它。且它的 mtime 比较不是内容证明——`touch`、时钟偏差、用不同源码重编出相同 mtime 都能骗过它；git 历史比较也只看到已提交的 `rust/` 改动，未提交文件只靠 mtime。它只是本地快速辅查，可靠做法是重编，或用 `--expect-sha256 <构建时记录的哈希>` 比对库内容。
+
+安装与真机验证步骤见 [OHOS.md](../OHOS.md)：`hdc install -r` 装包，`aa start -a EntryAbility -b com.shijinpu.fqapp` 启动，`snapshot_display` 截图。
 
 `verify_audio_cenc.cjs` 的 AAC 样本头匹配是诊断线索，不等于解码器播放成功。图标生成细节见 [品牌资源说明](../assets/branding/README.md)。诊断输出放在 `build/`；经用户验收的发布资料按版本存入 `release-archives/`。

@@ -18,7 +18,7 @@
 # A module token is matched as a substring of the test file name, so 'home'
 # also picks up home_scroll_cost_test.dart and real_home_payload_test.dart.
 # A token matching nothing is a hard error: a typo must not quietly run less
-# than the caller asked for (same rule as build_rust_backend.sh).
+# than the caller asked for.
 #
 # --no-pub is always passed: after the first `flutter pub get`, the resolve
 # at the start of every run is pure startup overhead.

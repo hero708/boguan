@@ -1,30 +1,30 @@
 # 应用图标
 
-`app_icon_source.png` 保存设计原图。它不在 Flutter 的 assets 清单中，不会把
-2048×2048 的原图打进 APK。
+图标形态是「三本竖立的书脊 + 奶油色播放徽章」，底色为 r7-mist「薄雾蓝」
+（`#E9EFF3` → `#CDD8E0`）。设计稿由脚本生成，`app_icon_source.png` 是 1024×1024 的
+满幅母图——不预切圆角、不带白边，桌面圆角由系统图标蒙版裁切。
 
-更换原图后，在项目根目录执行：
+缺省资产已随源码提交，普通构建不需要 Python。要改图标时，在仓库根目录执行：
 
 ```sh
-python -m pip install "Pillow>=9.1"
-python scripts/generate_app_icons.py
+python -m pip install "Pillow>=9.1" numpy
+python scripts/generate_ohos_icons.py            # 重新生成全部资产
+python scripts/generate_ohos_icons.py --preview  # 另存多尺寸预览到 build/app_icon_preview.png
 ```
 
-脚本生成以下资源，生成结果随源码保存，正常构建无需安装 Python 或 Pillow：
+脚本一次写出四处资产：
 
-- Android 五档密度的桌面图标（48 / 72 / 96 / 144 / 192 像素）：方形版本按底板的
-  15% 圆角裁切，另有圆形版本。Android 7.x 没有自适应图标，桌面直接使用这两组图。
-- Android 8.0 及以上的自适应图标：底板色与前景一致，原图铺满 108dp 前景的 72dp
-  视觉区；圆形、圆角方形遮罩会切掉 72dp 方形的四角，关键图形需留在 66dp 安全区内。
-- `windows/runner/resources/app_icon.ico`：16–256 七档，供 Windows 运行器与安装包
-  使用。
-- `assets/images/app_logo.webp`：384×384，供应用内“关于”页使用。该页以 88dp 绘制，
-  384px 覆盖到 4 倍 DPI；用 WebP 而非 PNG 是为了让入包体积小一个数量级。
+| 文件 | 尺寸 | 用途 |
+| --- | --- | --- |
+| `assets/branding/app_icon_source.png` | 1024 | 设计母图（不入 assets 清单，不进包） |
+| `ohos/AppScope/resources/base/media/app_icon.png` | 512 | 应用图标，`AppScope/app.json5` 的 `icon` |
+| `ohos/entry/src/main/resources/base/media/icon.png` | 512 | 启动页图标，`module.json5` 的 `startWindowIcon` |
+| `assets/images/app_logo.webp` | 512（圆角 23.5%） | 应用内「关于」「我的」等页面的 logo |
 
-设计原图自带白色页边与圆角底板。脚本会把页边刷成底板色，让底板铺满整个画板；
-否则系统底板与画在内层的底板会叠成双层背景。原图若带透明通道，会先铺到白底上再
-处理；四角找不到白页边、页边占比异常或页边没灌满时脚本直接报错，不会产出错色图标。
+几何参数（书脊宽度/高度、书页块、徽章位置）改动会直接影响图标识别，修改前先看清楚
+`generate_ohos_icons.py` 里的注释。底色是冷调，投影必须用冷色（`SHADOW = (78, 92, 112)`）——
+暖褐投影会在薄雾蓝上留一层脏晕。
 
-图标配置见 `android/app/src/main/AndroidManifest.xml`，Flutter 资源声明见
-`pubspec.yaml`。桌面图标需要重新构建并安装 APK 后更新，热重载不会更新桌面图标；
-Windows 图标由同一脚本生成，构建安装包前无需手工替换。
+生成后需重新 `flutter build hap --debug` 并 `hdc install -r` 装机，桌面图标与启动图才会更新；
+热重载不会刷新图标。桌面显示的应用名来自 `ohos/entry/src/main/resources/<locale>/element/string.json`
+的 `EntryAbility_label`（当前为「博观」）。
